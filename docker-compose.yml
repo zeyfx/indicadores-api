@@ -1,0 +1,38 @@
+services:
+  banco:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: indicadores
+      POSTGRES_PASSWORD: indicadores
+      POSTGRES_DB: indicadores
+    volumes:
+      - dados:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U indicadores"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+psycopg://indicadores:indicadores@banco:5432/indicadores
+      ETL_API_KEY: ${ETL_API_KEY:-}
+    ports:
+      - "8000:8000"
+    depends_on:
+      banco:
+        condition: service_healthy
+
+  # Execução avulsa do pipeline: docker compose run --rm etl
+  etl:
+    build: .
+    command: ["sh", "-c", "alembic upgrade head && python -m indicadores.etl"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://indicadores:indicadores@banco:5432/indicadores
+    depends_on:
+      banco:
+        condition: service_healthy
+    profiles: ["etl"]
+
+volumes:
+  dados:
