@@ -14,7 +14,7 @@ from indicadores import models  # noqa: F401
 from indicadores.api.main import criar_app
 from indicadores.api.rotas import obter_transporte
 from indicadores.config import configuracao
-from indicadores.db import Base, obter_fabrica
+from indicadores.db import Base, ativar_chaves_estrangeiras, obter_fabrica
 
 
 @pytest.fixture(autouse=True)
@@ -33,8 +33,10 @@ def fabrica() -> Iterator[sessionmaker[Session]]:
     if url:
         engine = create_engine(url)
     else:
-        engine = create_engine(
-            "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+        engine = ativar_chaves_estrangeiras(
+            create_engine(
+                "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+            )
         )
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)

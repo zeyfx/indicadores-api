@@ -22,6 +22,7 @@ def inserir_indice_ipca(fabrica, valores: dict[date, float]):
                 fonte="teste",
             )
         )
+        sessao.flush()  # a série precisa existir antes das observações (chave estrangeira)
         for dia, valor in valores.items():
             sessao.add(
                 Observacao(
